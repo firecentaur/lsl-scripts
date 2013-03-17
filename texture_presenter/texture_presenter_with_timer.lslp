@@ -1,6 +1,6 @@
 /*
 *
-*  Copyright (c) 2011-06 contributors (see below)
+*  Copyright (c) 2013 contributors (see below)
 *  Released under the GNU GPL v3
 *  -------------------------------------------
 *
