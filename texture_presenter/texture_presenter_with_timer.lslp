@@ -111,7 +111,7 @@ menu(key user_key){
                     silent_option=["Messages off"];
                 }
                 menu_options = ["Reset","Set Timer"]+ timer_option+ ["Next", "Previous"]+lock_option+silent_option;
-                llDialog(user_key, "Slide "+(string)(current_slide+1)+" of "+(string)llGetListLength(textures)+". Please select an option", menu_options,MENU_CHANNEL);
+                llDialog(user_key, "Slideshow is "+llList2String(lock_option,0)+"ed.\nSlide "+(string)(current_slide+1)+" of "+(string)llGetListLength(textures)+".\nPlease select an option", menu_options,MENU_CHANNEL);
             }
             else{
                 if (LOCK==FALSE){
