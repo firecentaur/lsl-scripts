@@ -27,6 +27,8 @@
 *
 *  Enjoy!
 *
+*  This script can be found on git hub: https://github.com/firecentaur/lsl-scripts
+*
 *  Contributors:
 *   Paul Preibisch (fire@b3dmultitech.com)
 *
