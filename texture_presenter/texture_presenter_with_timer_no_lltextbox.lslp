@@ -1,6 +1,6 @@
 /*
 *
-*  Copyright (c) 2013 contributors (see below)
+*  Copyright (c) 2011-06 contributors (see below)
 *  Released under the GNU GPL v3
 *  -------------------------------------------
 *
@@ -27,13 +27,11 @@
 *
 *  Enjoy!
 *
-*  This script can be found on git hub: https://github.com/firecentaur/lsl-scripts
-*
 *  Contributors:
 *   Paul Preibisch (fire@b3dmultitech.com)
 *
 *  DESCRIPTION
-*  (Note: this version DOES use llTextBox)
+*  (Note: this version does NOT use llTextBox)
 *
 *  Hi everyone, I hope this script helps you for your Virtual World Presentations!
 *  To use, simply place this script into an Opensim Primitive Object, along with your textures.
@@ -74,8 +72,7 @@ vector PINK=<1.00000, 0.00000, 1.00000>;
 vector PURPLE=<0.57338, 0.25486, 1.00000>;
 vector BLACK= <0.00000, 0.00000, 0.00000>;
 vector WHITE= <1.00000, 1.00000, 1.00000>;
-integer UNLOCKED=FALSE;
-integer LOCKED=TRUE;
+
 update_inventory(){
     integer index=0;
     total_items = llGetInventoryNumber(INVENTORY_TEXTURE);
@@ -91,7 +88,7 @@ update_inventory(){
             }
 }
 menu(key user_key){
-            string lock_message;
+    
             if (user_key==llGetOwner()){
                 list timer_option;
                 list menu_options;
@@ -102,14 +99,10 @@ menu(key user_key){
                 }else{
                     timer_option=["Start Timer"];
                 }
-                if (LOCK==TRUE){
-                    lock_option=["unlock"];    
-                    lock_message="Slide show is currently locked";
-                    
+                if (LOCK==FALSE){
+                    lock_option=["lock"];    
                 }else{
-                    lock_option=["lock"];
-                    llSay(0,"currently unlocked");
-                    lock_message="Slide show is currently unlocked";
+                    lock_option=["unlock"];
                 }
                 if (SILENT==FALSE){
                     silent_option=["Messages on"];    
@@ -117,7 +110,7 @@ menu(key user_key){
                     silent_option=["Messages off"];
                 }
                 menu_options = ["Reset","Set Timer"]+ timer_option+ ["Next", "Previous"]+lock_option+silent_option;
-                llDialog(user_key, lock_message+"\nSlide "+(string)(current_slide+1)+" of "+(string)llGetListLength(textures)+".\nPlease select an option", menu_options,MENU_CHANNEL);
+                llDialog(user_key, "Slide "+(string)(current_slide+1)+" of "+(string)llGetListLength(textures)+". Please select an option", menu_options,MENU_CHANNEL);
             }
             else{
                 if (LOCK==FALSE){
@@ -162,9 +155,8 @@ prev_slide(key user_key){
 default {
     state_entry() {
         llSetText("", RED, 1);
-        LOCK=TRUE;
         MENU_CHANNEL=random_integer(-900000-30,000);
-        TEXT_BOX_CHANNEL=random_integer(-1900000,-900000);
+        TEXT_BOX_CHANNEL=9;
         llListen(MENU_CHANNEL, "", "", ""); 
         llListen(TEXT_BOX_CHANNEL, "", "", "");
         update_inventory();
@@ -221,7 +213,7 @@ default {
             if (command=="Set Timer"){
                 if (user_key!=llGetOwner()){return;}//only allow owner to control
                 //http://wiki.secondlife.com/wiki/LlTextBox
-                llTextBox( user_key, "Please enter the time in seconds", TEXT_BOX_CHANNEL);
+                llDialog( user_key, "Please enter the time in seconds on channel 9 by typing \"/9 20\" for 20 seconds",["ok"], TEXT_BOX_CHANNEL);
             }else
             if (command=="Start Timer"){
                 if (user_key!=llGetOwner()&&LOCK==TRUE){return;}//only allow owner to control if presenter is locked
@@ -233,7 +225,6 @@ default {
                 if (user_key!=llGetOwner()&&LOCK==TRUE){return;}//only allow owner to control if presenter is locked
                 llSetTimerEvent(0);
                 timer_status="off";
-                llSetText("", RED, 1);
                 llInstantMessage(user_key, "Timer stopped");
             }else
             if (command=="Previous"){
@@ -264,17 +255,17 @@ default {
                 llInstantMessage(user_key,"Slideshow stopped");
                 llSetText("", RED, 1);
             }else{
-                llInstantMessage(user_key,"Slide delay set to "+(string)SLIDE_DELAY);
-                timer_status="on";
-                llSetTimerEvent(1);
+            	llInstantMessage(user_key,"Slide delay set to "+(string)SLIDE_DELAY);
+            	timer_status="on";
+            	llSetTimerEvent(1);
             }
         }
             menu(user_key);
     }
     timer() {
-        
-        slide_timer_counter++;
-        if ((SLIDE_DELAY-slide_timer_counter)<0){
+    	
+    	slide_timer_counter++;
+    	if ((SLIDE_DELAY-slide_timer_counter)<0){
             slide_timer_counter=0;
             next_slide(NULL_KEY);
         }
