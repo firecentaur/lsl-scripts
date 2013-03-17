@@ -73,7 +73,8 @@ vector PINK=<1.00000, 0.00000, 1.00000>;
 vector PURPLE=<0.57338, 0.25486, 1.00000>;
 vector BLACK= <0.00000, 0.00000, 0.00000>;
 vector WHITE= <1.00000, 1.00000, 1.00000>;
-
+integer UNLOCKED=FALSE;
+integer LOCKED=TRUE;
 update_inventory(){
     integer index=0;
     total_items = llGetInventoryNumber(INVENTORY_TEXTURE);
@@ -89,7 +90,7 @@ update_inventory(){
             }
 }
 menu(key user_key){
-    
+            string lock_message;
             if (user_key==llGetOwner()){
                 list timer_option;
                 list menu_options;
@@ -100,10 +101,14 @@ menu(key user_key){
                 }else{
                     timer_option=["Start Timer"];
                 }
-                if (LOCK==FALSE){
-                    lock_option=["lock"];    
+                if (LOCK==TRUE){
+                    lock_option=["unlock"];    
+                    lock_message="Slide show is currently locked";
+                    
                 }else{
-                    lock_option=["unlock"];
+                    lock_option=["lock"];
+                    llSay(0,"currently unlocked");
+                    lock_message="Slide show is currently unlocked";
                 }
                 if (SILENT==FALSE){
                     silent_option=["Messages on"];    
@@ -111,7 +116,7 @@ menu(key user_key){
                     silent_option=["Messages off"];
                 }
                 menu_options = ["Reset","Set Timer"]+ timer_option+ ["Next", "Previous"]+lock_option+silent_option;
-                llDialog(user_key, "Slideshow is "+llList2String(lock_option,0)+"ed.\nSlide "+(string)(current_slide+1)+" of "+(string)llGetListLength(textures)+".\nPlease select an option", menu_options,MENU_CHANNEL);
+                llDialog(user_key, lock_message+"\nSlide "+(string)(current_slide+1)+" of "+(string)llGetListLength(textures)+".\nPlease select an option", menu_options,MENU_CHANNEL);
             }
             else{
                 if (LOCK==FALSE){
@@ -156,6 +161,7 @@ prev_slide(key user_key){
 default {
     state_entry() {
         llSetText("", RED, 1);
+        LOCK=TRUE;
         MENU_CHANNEL=random_integer(-900000-30,000);
         TEXT_BOX_CHANNEL=random_integer(-1900000,-900000);
         llListen(MENU_CHANNEL, "", "", ""); 
@@ -226,6 +232,7 @@ default {
                 if (user_key!=llGetOwner()&&LOCK==TRUE){return;}//only allow owner to control if presenter is locked
                 llSetTimerEvent(0);
                 timer_status="off";
+                llSetText("", RED, 1);
                 llInstantMessage(user_key, "Timer stopped");
             }else
             if (command=="Previous"){
