@@ -2,6 +2,7 @@
 *
 *  Copyright (c) 2013 contributors (see below)
 *  Released under the GNU GPL v3
+*  Github: https://github.com/firecentaur/lsl-scripts
 *  -------------------------------------------
 *
 *  This program is free software: you can redistribute it and/or modify

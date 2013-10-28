@@ -2,6 +2,7 @@
 *
 *  Copyright (c) 2013 contributors (see below)
 *  Released under the GNU GPL v3
+*  Github: https://github.com/firecentaur/lsl-scripts
 *  -------------------------------------------
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -69,6 +70,7 @@ integer SLOODLE_OBJECT_REGISTER_INTERACTION= -1639271133; //channel objects send
 list randColors=[RED,ORANGE,PINK,PURPLE,BABYBLUE,YELLOW];
 integer rezCounter=0;
 list queue;
+integer MANUAL_COMMAND=9;
 list myPrims;
 debug(string s){
     list params = llGetPrimitiveParams([PRIM_MATERIAL]);
@@ -157,6 +159,7 @@ state go {
     }
     state_entry() {
           llMessageLinked(LINK_ALL_OTHERS, -988, "p1", NULL_KEY);
+            toggle*=-1;
           llSetTimerEvent(10);
          llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
             llMessageLinked(LINK_SET, -99, "p6", NULL_KEY);
@@ -177,11 +180,17 @@ state go {
         TEXTURE_MENU_CHANNEL= random_integer(-999,-9999);
         llListen(PUZZLE_CHANNEL+1, "", "", "");
         llListen(TEXTURE_MENU_CHANNEL, "", "", "");
+        llListen(MANUAL_COMMAND, "", "", "");
 
         
     }
     listen(integer channel, string name, key id, string message) {
         //        llRegionSayTo(myPuzzleGame,PUZZLE_CHANNEL,"CORRECT|"+(string)userKey+"|"+(string)coordUuid);
+        if (channel == MANUAL_COMMAND){
+        	if (message=="clear"){
+        	tellPuzzlePieces("DIE");
+        	}
+        }else
         if (channel==TEXTURE_MENU_CHANNEL){
             integer num_textures=llGetInventoryNumber(INVENTORY_TEXTURE);
             string texture = message;
@@ -282,6 +291,10 @@ state go {
                 tellPuzzlePieces("PUSH");
                  
             }else
+             if (button=="CLEAR"&&UNLOCKED==TRUE){
+                tellPuzzlePieces("DIE");
+                 
+            }
             if (button=="PULL"&&UNLOCKED==TRUE){
                 tellPuzzlePieces("PULL");
                  
