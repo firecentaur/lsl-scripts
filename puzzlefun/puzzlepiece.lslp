@@ -228,12 +228,12 @@ move_to_map_position(key uuid,integer answer) {
        bounce();
     
     }else{
-        llSetRot(ZERO_ROTATION);
+        llSetRot(maprot);
         llTriggerSound("LOCKED", 1);
         status="LOCKED";
         
     }
-     llSetRot(ZERO_ROTATION);
+     llSetRot(maprot);
   //  llSetRot( maprot * map_rotation_offset );
   //  llSetRot( maprot );
 
