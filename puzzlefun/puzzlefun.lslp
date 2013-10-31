@@ -65,7 +65,6 @@ list puzzlePieces;
 string HELPURL= "http://bit.ly/puzzlefunvideo";  
 integer correctCounter=0;
 integer toggleHelp=-1;
-integer toggle=-1;
 integer SLOODLE_OBJECT_REGISTER_INTERACTION= -1639271133; //channel objects send interactions to the mod_interaction-1.0 script on to be forwarded to server
 list randColors=[RED,ORANGE,PINK,PURPLE,BABYBLUE,YELLOW];
 integer rezCounter=0;
@@ -143,6 +142,20 @@ clearBoard(){
      }
      llDialog(id, "Please select a texture", buttons, TEXTURE_MENU_CHANNEL);
  }
+ integer CLOSED=0;
+ integer OPEN=1;
+ integer gameMenuState;
+ closeGameMenu(){
+ 	gameMenuState=CLOSED;
+ 	llTriggerSound("close", 1);
+ 	llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);
+    
+ }
+ openGameMenu(){
+ 	gameMenuState=OPEN;
+ 	llTriggerSound("open", 1);
+ 	llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);    
+ }
  default {
     on_rez(integer start_param) {
         llResetScript();
@@ -158,20 +171,19 @@ state go {
         llResetScript();
     }
     state_entry() {
-          llMessageLinked(LINK_ALL_OTHERS, -988, "p1", NULL_KEY);
-            toggle*=-1;
-          llSetTimerEvent(10);
-         llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
-            llMessageLinked(LINK_SET, -99, "p6", NULL_KEY);
+        llMessageLinked(LINK_ALL_OTHERS, -988, "p1", NULL_KEY);
+        llSetTimerEvent(10);
+        llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
+        llMessageLinked(LINK_SET, -99, "p6", NULL_KEY);
+        openGameMenu();
         correctCounter=0;
-       myMap= llGetInventoryName(INVENTORY_TEXTURE, 0);
+        myMap= llGetInventoryName(INVENTORY_TEXTURE, 0);
         rezCounter=0;
         debug("Default State");
         clearBoard();
-         integer num_textures=llGetInventoryNumber(INVENTORY_TEXTURE);
+        integer num_textures=llGetInventoryNumber(INVENTORY_TEXTURE);
         integer n=0;
         textures=[];
-        
         for (n=0;n<num_textures;n++){
              string texture_name = llGetInventoryName(INVENTORY_TEXTURE, n);
             textures+=texture_name;
@@ -181,8 +193,6 @@ state go {
         llListen(PUZZLE_CHANNEL+1, "", "", "");
         llListen(TEXTURE_MENU_CHANNEL, "", "", "");
         llListen(MANUAL_COMMAND, "", "", "");
-
-        
     }
     listen(integer channel, string name, key id, string message) {
         //        llRegionSayTo(myPuzzleGame,PUZZLE_CHANNEL,"CORRECT|"+(string)userKey+"|"+(string)coordUuid);
@@ -260,21 +270,16 @@ state go {
                 llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
             }else            
             if (button=="SETTINGS"&&UNLOCKED==TRUE){
-                if (toggle==-1){
-                    llTriggerSound("open", 1);
-                    llMessageLinked(LINK_ALL_OTHERS, -988, "p1", NULL_KEY);
-                    toggle*=-1;}else
-                if (toggle==1){
-                    llTriggerSound("close", 1);                    
-                    llMessageLinked(LINK_ALL_OTHERS, -988, "p0", NULL_KEY);
-                    toggle*=-1;
+                if (gameMenuState==CLOSED){
+                    openGameMenu();
+                    }
+                    else
+                if (gameMenuState==OPEN){
+                    closeGameMenu();                   
                 }                    
             }else
             if (button=="HELP"){
-                
-                     
                     llShout(0,"Puzzle Game Help Video: "+HELPURL);
-
             }else
             if (button=="RESET"&&UNLOCKED==TRUE){
                  tellPuzzlePieces("DIE");
@@ -328,8 +333,7 @@ state go {
             }
         }
         llMessageLinked(LINK_ALL_OTHERS, -988, "p0", NULL_KEY);
-          llTriggerSound("close", 1);
-           toggle*=-1;
+        closeGameMenu();
     }
 }
 
