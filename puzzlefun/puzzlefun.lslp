@@ -77,7 +77,7 @@ debug(string s){
     if (llList2Integer(params, 0)== PRIM_MATERIAL_FLESH) {
       //  llOwnerSay(s);
     }
-    
+      
 }
 //tellPuzzlePieces function is used to send messages to the puzzle peices 
 tellPuzzlePieces(string message){
@@ -339,11 +339,15 @@ state rezzing{
         debug("Rezzing State");
         integer i;
         vector myPos = llGetPos();
+        rotation myRot = llGetRot();
         counter =0;
-       
-        for (i=0;i<25;i++){
+        rotation relativeRot = <0.0, 0.0, 0.0, 0.707107>; // Rotated 90 degrees on the x-axis compared to this prim
+		for (i=0;i<25;i++){
             vector pos = getLinkPos("puzzlePiece"+(string)i);
-            llRezObject("puzzlePiece", <myPos.x+pos.x,myPos.y+pos.y,myPos.z+pos.z+0.4>, ZERO_VECTOR, ZERO_ROTATION, i);
+        	vector relativePosOffset =<pos.x,pos.y,pos.z+0.4>; 
+        	vector rezPos = myPos+relativePosOffset *myRot;
+        	rotation rezRot = relativeRot*myRot;
+            llRezObject("puzzlePiece", rezPos, ZERO_VECTOR, rezRot, i);
             
         }
     }
