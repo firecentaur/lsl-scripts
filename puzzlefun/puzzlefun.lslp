@@ -50,7 +50,7 @@ list textures;
 integer counter;
 integer UNLOCKED=TRUE;
 integer current_page;
-string myMap;
+string myPuzzleTexture;
 vector RED =<1.00000, 0.00000, 0.00000>;
 vector ORANGE=<1.00000, 0.43763, 0.02414>;
 vector YELLOW=<1.00000, 1.00000, 0.00000>;
@@ -108,6 +108,19 @@ vector getLinkPos(string name){
         }
         return ZERO_VECTOR;
 }
+//return the link num of name
+integer getLinkNum(string name){
+ 		integer len=llGetNumberOfPrims();
+        integer i;
+        list result;
+        
+        for (i=0;i<len;i++){
+            if (llGetLinkName(i)==name){
+            	return i;
+            }
+        }
+        return -1;
+}
 clearBoard(){
     integer len=llGetNumberOfPrims();
         integer i;
@@ -146,27 +159,33 @@ clearBoard(){
  integer OPEN=1;
  integer gameMenuState;
  closeGameMenu(){
- 	gameMenuState=CLOSED;
- 	llTriggerSound("close", 1);
- 	llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);
+     gameMenuState=CLOSED;
+     llTriggerSound("close", 1);
+     llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);
     
  }
  openGameMenu(){
- 	gameMenuState=OPEN;
- 	llTriggerSound("open", 1);
- 	llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);    
+     gameMenuState=OPEN;
+     llTriggerSound("open", 1);
+     llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);    
  }
- default {
-    on_rez(integer start_param) {
-        llResetScript();
-    }
-    state_entry() {
-        tellPuzzlePieces("DIE");
-        
-        state go;
-    }
+ integer screenState=CLOSED;
+ closeScreen(){
+     screenState=CLOSED;
+     llTriggerSound("close", 1);
+     llMessageLinked(LINK_ALL_OTHERS, -1988, "close screen", NULL_KEY);
+    
  }
-state go {
+ openScreen(){
+     screenState=OPEN;
+     llTriggerSound("open", 1);
+     llMessageLinked(LINK_ALL_OTHERS, -1988, "open screen", NULL_KEY);    
+ }
+ integer screenLink;
+ init(){
+ 	screenLink = getLinkNum("tips screen");
+ }
+default {
     on_rez(integer start_param) {
         llResetScript();
     }
@@ -177,7 +196,7 @@ state go {
         llMessageLinked(LINK_SET, -99, "p6", NULL_KEY);
         openGameMenu();
         correctCounter=0;
-        myMap= llGetInventoryName(INVENTORY_TEXTURE, 0);
+        myPuzzleTexture= llGetInventoryName(INVENTORY_TEXTURE, 0);
         rezCounter=0;
         debug("Default State");
         clearBoard();
@@ -197,9 +216,9 @@ state go {
     listen(integer channel, string name, key id, string message) {
         //        llRegionSayTo(myPuzzleGame,PUZZLE_CHANNEL,"CORRECT|"+(string)userKey+"|"+(string)coordUuid);
         if (channel == MANUAL_COMMAND){
-        	if (message=="clear"){
-        	tellPuzzlePieces("DIE");
-        	}
+            if (message=="clear"){
+            tellPuzzlePieces("DIE");
+            }
         }else
         if (channel==TEXTURE_MENU_CHANNEL){
             integer num_textures=llGetInventoryNumber(INVENTORY_TEXTURE);
@@ -227,14 +246,14 @@ state go {
                 debug("this texture is: "+this_texture+" looking for : "+texture);
                 if (this_texture==texture){
                     found=TRUE;
-                    myMap = llGetInventoryName(INVENTORY_TEXTURE, t);
+                    myPuzzleTexture = llGetInventoryName(INVENTORY_TEXTURE, t);
                     debug("jumping");
                   tellPuzzlePieces("DIE");
                   state rezzing;
                 }
             }
             
-            debug("setting myMap to: "+myMap); 
+            debug("setting myPuzzleTexture to: "+myPuzzleTexture); 
              return;
         }
         list data = llParseStringKeepNulls(message, ["|"], [" "]);
@@ -299,7 +318,17 @@ state go {
              if (button=="CLEAR"&&UNLOCKED==TRUE){
                 tellPuzzlePieces("DIE");
                  
-            }
+            }else
+             if (button=="SCREEN"&&UNLOCKED==TRUE){
+              if (screenState==CLOSED){
+                    openScreen();
+                    }
+                    else
+                if (screenState==OPEN){
+                    closeScreen();                   
+                }    
+                 
+            }else
             if (button=="PULL"&&UNLOCKED==TRUE){
                 tellPuzzlePieces("PULL");
                  
@@ -332,8 +361,7 @@ state go {
             llSetLinkColor(i, WHITE, ALL_SIDES);
             }
         }
-        llMessageLinked(LINK_ALL_OTHERS, -988, "p0", NULL_KEY);
-        closeGameMenu();
+         closeGameMenu();
     }
 }
 
@@ -346,11 +374,14 @@ state rezzing{
         rotation myRot = llGetRot();
         counter =0;
         rotation relativeRot = <0.0, 0.0, 0.0, 0.707107>; // Rotated 90 degrees on the x-axis compared to this prim
-		for (i=0;i<25;i++){
+        //set texture of tips screen
+        
+        llSetLinkPrimitiveParams(linknumber, rules);
+        for (i=0;i<25;i++){
             vector pos = getLinkPos("puzzlePiece"+(string)i);
-        	vector relativePosOffset =<pos.x,pos.y,pos.z+0.4>; 
-        	vector rezPos = myPos+relativePosOffset *myRot;
-        	rotation rezRot = relativeRot*myRot;
+            vector relativePosOffset =<pos.x,pos.y,pos.z+0.4>; 
+            vector rezPos = myPos+relativePosOffset *myRot;
+            rotation rezRot = relativeRot*myRot;
             llRezObject("puzzlePiece", rezPos, ZERO_VECTOR, rezRot, i);
             
         }
@@ -359,8 +390,8 @@ state rezzing{
     object_rez(key id) {
         debug("rezzed puzzlePiece "+(string)rezCounter);
         puzzlePieces+=id;       
-        llGiveInventory(id, myMap);
-        debug("Giving "+myMap +" to "+llKey2Name(id));
+        llGiveInventory(id, myPuzzleTexture);
+        debug("Giving "+myPuzzleTexture +" to "+llKey2Name(id));
         rezCounter++;
         if (rezCounter>24)state go;
     }
