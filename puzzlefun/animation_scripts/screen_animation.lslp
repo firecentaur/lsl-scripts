@@ -4,7 +4,7 @@ default{
     state_entry() {
         myLink = llGetLinkNumber();
         llOwnerSay((string)myLink);
-    }
+    } 
     link_message(integer n, integer c, string m, key id){
           if (c!=-1988) return;
              myLink = llGetLinkNumber();

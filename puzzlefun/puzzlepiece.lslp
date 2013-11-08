@@ -52,6 +52,7 @@ integer LIMIT_Z=15;
 list possibleDestinations;
 integer coord_listenHandler ;
 integer PUZZLE_CHANNEL = -5000;
+integer CLEANUP_CHANNEL = -99;
 string  SND_WALL_CRUMBLING="SND_WALL_CRUMBLING";
 integer MY_PARAM;
 float texture_offsetX;
@@ -297,10 +298,12 @@ default {
         llOffsetTexture(texture_offsetX,texture_offsetY, ALL_SIDES);
         if (MY_PARAM==14) llOffsetTexture(0.400,0,ALL_SIDES);
         myStartPos=llGetPos();
+        
     }
     state_entry() {
         coord_listenHandler = llListen(PUZZLE_CHANNEL, "", "", "");
         llSetRot(ZERO_ROTATION);
+        llListen(CLEANUP_CHANNEL, "", "", "cleanup");
         
     }
    
@@ -351,15 +354,22 @@ default {
         list data = llParseStringKeepNulls(message, ["|"], [" "]);
         //llShout(TOUCH_CHANNEL,"COORDINATE TOUCHED|"+(string)userKey+"|"+(string)coordUuid+"|"+coordName);
         debug("channel : "+(string)channel);     
-       // if (llGetOwnerKey(id)!=llGetOwnerKey(llGetKey()))return;
+         string command=llList2Key(data,0);
+       if (channel==CLEANUP_CHANNEL){
+          if (command=="DIE" || command=="cleanup"){
+                llTriggerSound(SND_WALL_CRUMBLING, 1);
+                fire();
+                state die;
+            }
+       }else
         if (channel==PUZZLE_CHANNEL){
-            string command=llList2Key(data,0);
+           
             debug("command : "+command);
             if (command=="SHOW_NAMES"){
                 debug("setting hover text to: "+winner); 
                 llMessageLinked(LINK_SET, -998, winner, NULL_KEY);
             }else
-            if (command=="DIE"){
+            if (command=="DIE"||command=="cleanup"){
                 llTriggerSound(SND_WALL_CRUMBLING, 1);
                 fire();
                 state die;
