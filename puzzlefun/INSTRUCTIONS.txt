@@ -1,0 +1,31 @@
+PUZZLE FUN INTRODUCTION
+==================================================================================================================================
+Hi everyone! 
+
+This great a multi-player game for your events in Second Life.
+You can load your own (copy/mod) Textures into Puzzle Fun, or use the pre-loaded holiday puzzles!
+
+This puzzle game is great for educators or anyone who owns lab and wants to have a fun activity ready for their guests!  
+Just in time for Christmas, this Puzzle game comes with a Christmas textures loaded in its inventory.  
+
+To play the game, the owner just needs to click the game board, and select a puzzle! 
+The Puzzle will then rezz 25 puzzle pieces.  When finished rezzing, a count down timer begins and the pieces will scatter themselves within 10 meters of the puzzle.  
+
+Visitors then just click the puzzle pieces and then the board to place a puzzle piece.  The puzzle piece will zoom into place.  
+If correct, the piece will lock into position, otherwise it will bounce out!
+
+I've designed this game to be a collaborative or single user activity. Its super easy to use and fun!
+NEW - It now comes complete with special sound effects for extra fun!
+The owner can also press a "Show Names" Button to display who correctly placed each piece on the puzzle.  This is great for interactive scoring!
+
+Happy Holidays!
+
+VIDEO URL: http://www.youtube.com/watch?v=YvDluOdScAc
+Fire Centaur 
+
+LICENSE: 
+=====
+GPL3.0
+http://www.gnu.org/licenses/gpl-3.0.html
+https://github.com/firecentaur/lsl-scripts/tree/master/puzzlefun
+
