@@ -3,12 +3,12 @@ integer myLink;
 default{
     state_entry() {
         myLink = llGetLinkNumber();
-        llOwnerSay((string)myLink);
-    } 
+ //       llOwnerSay((string)myLink);
+    }
     link_message(integer n, integer c, string m, key id){
           if (c!=-1988) return;
              myLink = llGetLinkNumber();
-                  llOwnerSay((string)"mylink is "+(string)myLink);
+           //       llOwnerSay((string)"mylink is "+(string)myLink+" "+m);
         vector lSize = llList2Vector(llGetLinkPrimitiveParams(1,[7]),0);
         if(m == "close screen"){
             llSetLinkPrimitiveParamsFast(myLink,[

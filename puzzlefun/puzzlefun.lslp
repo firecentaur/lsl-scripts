@@ -38,10 +38,17 @@
 */
 
 
-integer random_integer( integer min, integer max )
-{
-  return min + (integer)( llFrand( max - min + 1 ) );
-}
+list prims;
+integer CLOSED=0;
+integer OPEN=1;
+integer gameMenuState;
+integer screenState=CLOSED;
+integer screenLink;
+integer IN_PROGRESS = 1;
+integer GAME_OVER = 0;
+integer gameState=GAME_OVER;
+list textureMenuNames;
+integer PUZZLE_FUN_MAIN=-72221;
 integer PUZZLE_CHANNEL = -5000; //channel the puzzle uses to talk to puzzle pieces - ie: tells them to die etc
 integer TEXTURE_MENU_CHANNEL;
 integer SCREEN_CHANNEL=-1988;
@@ -73,6 +80,11 @@ integer rezCounter=0;
 list queue;
 integer MANUAL_COMMAND=9;
 list myPrims;
+integer random_integer( integer min, integer max )
+{
+  return min + (integer)( llFrand( max - min + 1 ) );
+}
+
 debug(string s){
     list params = llGetPrimitiveParams([PRIM_MATERIAL]);
     if (llList2Integer(params, 0)== PRIM_MATERIAL_FLESH) {
@@ -88,6 +100,13 @@ tellPuzzlePieces(string message){
         llRegionSayTo(llList2Key(puzzlePieces,i),PUZZLE_CHANNEL, message);
     }
 }
+tellPuzzlePiece(string message,integer puzzlePieceNum){
+    //llOwnerSay("linkNum is : "+(string)puzzlePieceNum);
+   // llOwnerSay("key is : "+(string)llList2Key(puzzlePieces,puzzlePieceNum)+message);
+    integer num = llGetListLength(puzzlePieces);
+    llRegionSayTo(llList2Key(puzzlePieces,puzzlePieceNum),PUZZLE_CHANNEL, message);
+    
+}
 
 
 //returns a random color
@@ -97,18 +116,43 @@ vector getColor(){
 }
 
 //gets the location of a particular prim
+
 vector getLinkPos(string name){
         integer len=llGetNumberOfPrims();
         integer i;
         list result;
+        prims=[];
+        string linkName;
         for (i=0;i<len;i++){
-            
-            if (llGetLinkName(i)==name){
+            linkName=llGetLinkName(i);
+            prims+=linkName;
+            if (linkName==name){
                 result =llGetLinkPrimitiveParams(i, [PRIM_POS_LOCAL]);
                 return llList2Vector(result,0);        
             }
         }
         return ZERO_VECTOR;
+}
+setSlotTextures(string texture){
+    integer len = llGetNumberOfPrims();
+    integer i=0;
+    prims=[];
+    string linkName;
+    for (i=0;i<len;i++){
+        linkName=llGetLinkName(i);
+        prims+=linkName;
+    }
+    vector repeats = <1,1,1>;
+    integer face = ALL_SIDES;
+    vector offsets = <0,0,0>;
+    float rotation_in_radians = 0;
+  
+    for (i=0;i<len;i++){
+        //llSay(0,llGetSubString(llGetLinkName(i), 0, 10));
+        if (llGetSubString(llGetLinkName(i), 0, 10)=="puzzlePiece"){
+            llSetLinkPrimitiveParamsFast(i,[ PRIM_TEXTURE,0, texture, repeats, offsets, rotation_in_radians ]);
+        }
+    }
 }
 //return the link num of name
 integer getLinkNum(string name){
@@ -132,7 +176,10 @@ clearBoard(){
 }
 
  display_texture_menu(integer page,key id){
-     debug("displaying texture menu");
+      closeGameMenu();
+     debug("displaying texture menu "+(string)id+" "+(string)TEXTURE_MENU_CHANNEL);
+     
+     llListen(TEXTURE_MENU_CHANNEL, "", id, "");
      integer num_textures = llGetListLength(textures);
      integer MAX_BUTTONS = 12;
      list buttons;
@@ -157,75 +204,56 @@ clearBoard(){
      }
      llDialog(id, "Please select a texture", buttons, TEXTURE_MENU_CHANNEL);
  }
- integer CLOSED=0;
- integer OPEN=1;
- integer gameMenuState;
  closeGameMenu(){
+      if (gameMenuState!=CLOSED){
+          llTriggerSound("close", 1);
+     }
      gameMenuState=CLOSED;
-     llTriggerSound("close", 1);
      llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);
-    
  }
  openGameMenu(){
+     if (gameMenuState!=OPEN){
+       llTriggerSound("open", 1);
+      }
      gameMenuState=OPEN;
-     llTriggerSound("open", 1);
-     llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);    
+     llMessageLinked(LINK_ALL_OTHERS, -988, "p"+(string)gameMenuState, NULL_KEY);
+     llSetTimerEvent(20);    
  }
- integer screenState=CLOSED;
  closeScreen(){
+      if (screenState!=CLOSED){
+          llTriggerSound("close", 1);
+      }
      screenState=CLOSED;
-     llTriggerSound("close", 1);
+     
      llMessageLinked(LINK_ALL_OTHERS, SCREEN_CHANNEL, "close screen", NULL_KEY);
     
  }
  openScreen(){
+     if (gameMenuState!=OPEN){
+       llTriggerSound("open", 1);
+      }
      screenState=OPEN;
-     llTriggerSound("open", 1);
      llMessageLinked(LINK_ALL_OTHERS, SCREEN_CHANNEL, "open screen", NULL_KEY);    
  }
- integer screenLink;
- init(){
-     openGameMenu();
-      openScreen();
-     loadTextures();
-     screenLink = getLinkNum("screen");
-     llSetTimerEvent(10);
-    llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
-    //set the puzzle texture to be the first texture in the inventory
-    
-    setTipsScreen(myPuzzleTexture);
-    correctCounter=0;
-    rezCounter=0;
-    debug("Default State");
-    clearBoard();
-            
- }
- list textureMenuNames;
+
  loadTextures(){
-         integer num_textures=llGetInventoryNumber(INVENTORY_TEXTURE);
+        integer num_textures=llGetInventoryNumber(INVENTORY_TEXTURE);
         integer n=0;
         textures=[];
         textureMenuNames=[];
-        string text = ""; 
-        
         for (n=0;n<num_textures;n++){
-            text="Loading puzzle texture "+(string)n+" of "+(string)num_textures;
-            llSetText(text, GREEN, 1); 
              string texture_name = llGetInventoryName(INVENTORY_TEXTURE, n);
-            textures+=texture_name;
-            llOwnerSay(texture_name);
-            if (llStringLength(texture_name)>12){
-                textureMenuNames+=llGetSubString(texture_name,0,11);
-                  llOwnerSay("--------textureMenuNames-------concatenating texturename to: "+llGetSubString(texture_name,0,11));
-            }else{
-                llOwnerSay("--------textureMenuNames-------adding texturename to: "+llGetSubString(texture_name,0,11));
-                textureMenuNames+=texture_name;
-            }
-            
+             if (texture_name!="blank"&&texture_name!="clickthis"){
+                textures+=texture_name;
+                if (llStringLength(texture_name)>12){
+	                textureMenuNames+=llGetSubString(texture_name,0,11);
+	            }else{
+	                if (texture_name!="blank"&&texture_name!="clickthis"){
+	                	textureMenuNames+=texture_name;
+	             	}
+	            }
+             }
         }
-        text="";
-        llSetText(text, GREEN, 1);
-        TEXTURE_MENU_CHANNEL= random_integer(-999,-9999);
  }
  moveTile(key userKey,integer linkNum){
                 key coordUuid=   llGetLinkKey(linkNum);
@@ -236,12 +264,18 @@ clearBoard(){
                 debug("**************** my puzzle piece num is: "+(string)puzzlePieceNum);
                 if (llGetSubString(coordName, 0, 10)=="puzzlePiece"){
                     debug(message);
-                    llSetLinkColor(linkNum, getColor(), ALL_SIDES);
-                    tellPuzzlePieces(message);
-                    debug("sending regionsay command to: "+(string)puzzlePieceNum+" "+message);
+                    if (gameState==IN_PROGRESS){
+                        llSetLinkColor(linkNum, getColor(), ALL_SIDES);
+                        tellPuzzlePieces(message);
+                        //tellPuzzlePiece(message,puzzlePieceNum);
+                        debug("sending regionsay command to: "+(string)puzzlePieceNum+" "+message);
+                    }else{
+                        display_texture_menu(0,userKey);
+                    }
                 }
  }
 gameOver(){
+    gameState=GAME_OVER;
     llTriggerSound("game_complete", 1);
     vector pos = llGetPos();
     llRezObject("fireworks",<pos.x,pos.y,pos.z+5> , <0,0,3>, ZERO_ROTATION, 1);
@@ -272,6 +306,7 @@ string handleTextureMenuChoice(string choice,key userKey){
                     current_page=0;
                 }
                 display_texture_menu(current_page,userKey);
+                //llOwnerSay("user changed the page");
                 return "user changed the page" ;
             }else if (choice=="Previous"){
                 current_page--;
@@ -279,9 +314,12 @@ string handleTextureMenuChoice(string choice,key userKey){
                     current_page=0;
                 }
                 display_texture_menu(current_page,userKey);
+                //llOwnerSay("user changed the page");
                 return "user changed the page" ;
             }
             //the user chose a texture from the dialog menu
+        
+            llTriggerSound("SND_STARTING_UP", 1);
             string texture = choice;
             integer t;
             integer found=FALSE;
@@ -294,52 +332,92 @@ string handleTextureMenuChoice(string choice,key userKey){
                     myPuzzleTexture = llList2String(textures, t);
                     debug("************** found puzzleTexture "+myPuzzleTexture);
                     setTipsScreen(myPuzzleTexture);
-                  tellPuzzlePieces("DIE");
-                  
+                        //llOwnerSay( "user chose a texture");
                 return "user chose a texture";      
                 }
             }
            return ""; 
             
 }
-integer PUZZLE_FUN_MAIN=-72221;
+gameStart(){
+    gameState=IN_PROGRESS;
+    clearBoard();
+    llMessageLinked(LINK_SET, SCATTER_CHANNEL, "reset timer", NULL_KEY);
+    setSlotTextures("clickthis");
+}
+scatter(){
+    llMessageLinked(LINK_SET, SCATTER_CHANNEL, "reset timer", NULL_KEY);
+    llMessageLinked(LINK_SET, SCATTER_CHANNEL, "delay scatter", NULL_KEY);
+}
+gameEnd(){
+    closeScreen();
+    closeGameMenu();      
+    llMessageLinked(LINK_SET, SCATTER_CHANNEL, "reset timer", NULL_KEY);
+    setSlotTextures("blank");
+    gameState=GAME_OVER;
+    llTriggerSound("game_over", 1);
+    llSleep(3);
+    tellPuzzlePieces("DIE");
+}
+
 default {
-		
+        
     on_rez(integer start_param) {
-        llWhisper(-99, "cleanup");
+        llShout(-99, "cleanup");
         llResetScript();
         
     }
     state_entry() {
-    	llWhisper(-99, "cleanup");
-    	myPuzzleTexture= llGetInventoryName(INVENTORY_TEXTURE, 0);
-    	state go;
+        closeScreen();
+        setSlotTextures("blank");
+        llShout(-99, "cleanup");
+        myPuzzleTexture= llGetInventoryName(INVENTORY_TEXTURE, 0);
+        TEXTURE_MENU_CHANNEL= random_integer(-999,-9999);
+        state go;
     }
 }
 
-state go{
-	  on_rez(integer start_param) {
-        llWhisper(-99, "cleanup");
+state startGame{
+	 on_rez(integer start_param) {
         llResetScript();
-        
-    }
+      }
     state_entry() {
-        init();
+        scatter();
+        gameState=IN_PROGRESS;
+        state go;
+    }
+}
+state go{
+      on_rez(integer start_param) {
+        llResetScript();
+      }
+    state_entry() {
+         //openGameMenu();     
+         loadTextures();
+         screenLink = getLinkNum("screen");
+         llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
+         //set the puzzle texture to be the first texture in the inventory
+         setTipsScreen(myPuzzleTexture);
+         correctCounter=0;
+         rezCounter=0;
+         clearBoard();
         //listen to messages from the puzzle pieces
         llListen(PUZZLE_CHANNEL+1, "", "", "");
         //listen to messages from the dialog menu when user is changing textures
         llListen(TEXTURE_MENU_CHANNEL, "", "", "");
+        llListen(TEXTURE_MENU_CHANNEL, "", "", "");
     }
     listen(integer channel, string name, key id, string message) {
         //        llRegionSayTo(myPuzzleGame,PUZZLE_CHANNEL,"CORRECT|"+(string)userKey+"|"+(string)coordUuid);
-        if (channel == MANUAL_COMMAND){
-            if (message=="clear"){
-            tellPuzzlePieces("DIE");
-            }
-        }else
+        
         if (channel==TEXTURE_MENU_CHANNEL){
+            
+            
             string choice = handleTextureMenuChoice(message,id);
-            if (choice=="user chose a texture") state rezzing; 
+            if (choice=="user chose a texture") {
+                
+                state rezzing; 
+            }
              return;
         }
         list data = llParseStringKeepNulls(message, ["|"], [" "]);
@@ -354,45 +432,43 @@ state go{
         }
     }    
     link_message(integer sender_num, integer num, string str, key id) {
-    	if (num!=PUZZLE_FUN_MAIN && num!=SCREEN_CHANNEL)return;
-    	
-    	if (str=="scatter"){
-    		tellPuzzlePieces("SCATTER");
-    		llSleep(2);
-    		llMessageLinked(LINK_THIS, SCATTER_CHANNEL, "open screen", NULL_KEY);
-    		
-    	}else
-    	if (str=="open screen"){
-    		screenState=OPEN;
-    	}else
-    	if (str=="close screen"){
-    		screenState=CLOSED;
-    	}
+    //    if (num!=PUZZLE_FUN_MAIN && num!=SCREEN_CHANNEL)return;
+        
+        if (str=="scatter"){
+            llTriggerSound("game_starting", 1);
+            tellPuzzlePieces("SCATTER");
+        }else
+        if (str=="open screen"){
+            screenState=OPEN;
+        }else
+        if (str=="close screen"){
+            screenState=CLOSED;
+        }
       
     }
     touch_start(integer num_detected) {
         integer j;
-         key userKey=llDetectedKey(j);
+      
         for (j=0;j<num_detected;j++){
             integer linkNum = llDetectedLinkNumber(j);
             key id = llDetectedKey(j);
+            key userKey=llDetectedKey(j);
             string button= llGetLinkName(linkNum);
             llTriggerSound("SND_INTERFACE_BEEP", 1);
-            if ((button=="SELECT TEXTURE"&&UNLOCKED==TRUE)||(button=="screen"&&UNLOCKED==TRUE)){
-                 display_texture_menu(0,id);
+            if ((button=="START"&&UNLOCKED==TRUE)||(button=="screen"&&UNLOCKED==TRUE)){
+                 display_texture_menu(0,userKey);
             }
-            if (button=="UNLOCKED"&&llDetectedKey(j)==llGetOwner()){
+            if (button=="UNLOCKED"&&userKey==llGetOwner()){
                 UNLOCKED=FALSE;
                 llMessageLinked(LINK_SET, LOCKED, "", NULL_KEY);
             }else
-            if (button=="LOCKED"&&llDetectedKey(j)==llGetOwner()){
+            if (button=="LOCKED"&&userKey==llGetOwner()){
                 UNLOCKED=TRUE;
                 llMessageLinked(LINK_SET, UNLOCK, "", NULL_KEY);
             }else            
             if (button=="SETTINGS"&&UNLOCKED==TRUE){
                 if (gameMenuState==CLOSED){
-                    llSetTimerEvent(20);//set timer to close game menu
-                    openGameMenu();
+                        openGameMenu();
                     }
                     else
                 if (gameMenuState==OPEN){
@@ -402,28 +478,27 @@ state go{
             if (button=="HELP"){
                     llShout(0,"Puzzle Game Help Video: "+HELPURL);
             }else
-            if (button=="RESET"&&UNLOCKED==TRUE){
-                 tellPuzzlePieces("DIE");
-                state rezzing;
-            }else
             if (button=="SHOW NAMES"&&UNLOCKED==TRUE){
                tellPuzzlePieces("SHOW_NAMES");
                debug("showing names"); 
             }else
-            if (button=="SCATTER"&&UNLOCKED==TRUE){
+          /*  if (button=="SCATTER"&&UNLOCKED==TRUE){
                if (screenState==OPEN){
-               	llMessageLinked(LINK_SET, SCATTER_CHANNEL, "scatter", NULL_KEY);
+                   llMessageLinked(LINK_SET, SCATTER_CHANNEL, "reset timer", NULL_KEY);
+                   llMessageLinked(LINK_SET, SCATTER_CHANNEL, "scatter", NULL_KEY);
+                   
                }else{
-               		tellPuzzlePieces("SCATTER");
+                       tellPuzzlePieces("SCATTER");
+                       llMessageLinked(LINK_SET, SCATTER_CHANNEL, "delay open", NULL_KEY);
                }
-            }else
+            }
+            else*/
             if (button=="PUSH"&&UNLOCKED==TRUE){
                 tellPuzzlePieces("PUSH");
                  
             }else
-             if (button=="CLEAR"&&UNLOCKED==TRUE){
-                tellPuzzlePieces("DIE");
-                 
+             if (button=="GAME END"&&UNLOCKED==TRUE){
+                 gameEnd();                
             }else
              if (button=="SCREEN"&&UNLOCKED==TRUE){
               if (screenState==CLOSED){
@@ -461,12 +536,18 @@ state go{
         if(change & (CHANGED_INVENTORY)) // Either of the changes will return true.
            loadTextures();
     }
+    
 }
 
 state rezzing{
+	 on_rez(integer start_param) {
+        llResetScript();
+      }
     state_entry() {
+        tellPuzzlePieces("DIE");
         puzzlePieces=[];
         debug("Rezzing State");
+        
         integer i;
         vector myPos = llGetPos();
         rotation myRot = llGetRot();
@@ -482,7 +563,9 @@ state rezzing{
             rotation rezRot = relativeRot*myRot;
             llRezObject("puzzlePiece", rezPos, ZERO_VECTOR, rezRot, i);
             
+            
         }
+        closeScreen();
     }
    
     object_rez(key id) {
@@ -491,7 +574,12 @@ state rezzing{
         llGiveInventory(id, myPuzzleTexture);
         debug("Giving "+myPuzzleTexture +" to "+llKey2Name(id));
         rezCounter++;
-        if (rezCounter>24)state go;
+        llMessageLinked(LINK_SET, SCATTER_CHANNEL, "delay scatter", NULL_KEY);
+        if (rezCounter>24){
+            llTriggerSound("loading_complete", 1);
+            setSlotTextures("clickthis");
+            state startGame;
+        }
     }
 
 }

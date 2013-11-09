@@ -1,0 +1,47 @@
+Puzzle Fun Version 1.4  Nov 9th 2013
+==============================
+Hi everyone!
+In this release, I have simplified game play quite a bit!  Now you just Click the start button in the game menu or click the game board to select a puzzle.
+Once  the puzzle is selected, the game will rez the tiles, and start a count down!
+If you want to End the game, click on the game menu, and select "End".  The game tiles will clean themselves up!
+I also added a new "HINT" feature.  Click on the HINT button to raise/lower a giant cube with a picture of the completed puzzle.
+Also added different collision noises when the tiles fall, and cleaned up the code quite a bit!
+I hope you will have fun with this!
+
+Puzzle Fun Version 1.3.9  Nov 4 2013
+==============================
+
+Fixed the bug that caused the Puzzle Vendor to keep sending you updated copies.  Sorry about that guys!  This version is 1.3.9, so please replace your 1.3.8 version in world, so the vendor doesn't keep sending you copies.
+
+
+Puzzle Fun Version 1.3.8  October 31st 2013
+==============================
+
+Season greetings everyone!
+Fire Centaur here!  
+I have good news! This version has some great feature updates!
+
+MULTIPLE PUZZLES
+=============
+You are now able to put your own textures into the contents of Puzzle Fun.  You can then choose a new puzzle by clicking "Select Puzzle" in the Game menu!!!
+
+New "Clear" feature
+===============
+Upon requests from users, I have added a "Clear" button in the game menu so users can clear the puzzle when they choose.  This will allow them to put the puzzle inworld when they are ready to play, and then press clear, to clean up, when they are finished.
+
+
+Rotation Fix
+=========
+This new version of Puzzle Fun lets you position the puzzle in any rotation you choose (so long as the puzzle is facing up! Then, when the puzzle pieces are rezzed, they will be rotated accordingly!
+
+Open-sourced the Code
+================
+I have also open-sourced the code for this puzzle game - so other developers can build upon it, improve it, and perhaps learn from it.
+The license is GPL 3.0 with attribution.
+This means, you are free to use the code in anyway, so long as the code is ALWAYS left open to other users AND maintains the copy write
+
+You can find it here: https://github.com/firecentaur/lsl-scripts
+
+Kind regards
+Paul - aka Fire Centaur -   fire@b3dmultitech.com
+Twitter: @fire

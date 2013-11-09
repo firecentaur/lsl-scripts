@@ -59,7 +59,7 @@ float texture_offsetX;
 float texture_offsetY;
 integer SLOODLE_OBJECT_BLINK= -1639271135; //linked message channel to tell a prim to blink
 string status="UNLOCKED";
-
+list rand=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25];
 // Returns number of Strides in a List
 integer fncStrideCount(list lstSource, integer intStride)
 {
@@ -186,7 +186,7 @@ bounce(){
         }
         
         llApplyImpulse(<randX,randY,SCATTER_FORCE>, FALSE);
-        llTriggerSound("explode", 1);
+        llTriggerSound("explode", .5);
 }
 particleBeam(key target){
  
@@ -285,12 +285,23 @@ list get_inventory(integer type)
 }
 string winner;
 key myPuzzleGame;
+string MY_SOUND;
+string MY_TEXTURE_SOUND;
+string MY_COLLISION_SOUND;
 default {
     on_rez(integer start_param) {
     
         llSetTexture("0dfccb38-93be-3eca-c2ea-b5179515267b", ALL_SIDES);
         MY_PARAM= start_param;
-        llSetObjectName("puzzlePiece"+(string)MY_PARAM);
+        MY_COLLISION_SOUND = "SND_"+(string)(23-random_integer(1,22));
+        llCollisionSound(MY_COLLISION_SOUND, 1.0);
+      //  llSay(0,"col:"+MY_COLLISION_SOUND);
+           llTriggerSound(MY_COLLISION_SOUND, 1);
+        
+        	MY_TEXTURE_SOUND = "SND_"+(string)(25-MY_PARAM);
+        MY_SOUND="SND_"+(string)(MY_PARAM+1);
+        llTriggerSound(MY_SOUND, 1);
+        llSetObjectName("puzzlePiece"+(string)(MY_PARAM));
         texture_offsetX = -0.4+0.2*(MY_PARAM%5);
         texture_offsetY = 0.4-0.2*((llFloor((0.08*(MY_PARAM+1)/0.4))));
         if (texture_offsetY ==-0.600)texture_offsetY ==-0.400;
@@ -304,7 +315,15 @@ default {
         coord_listenHandler = llListen(PUZZLE_CHANNEL, "", "", "");
         llSetRot(ZERO_ROTATION);
         llListen(CLEANUP_CHANNEL, "", "", "cleanup");
-        
+        rand = llListRandomize(rand, 1);
+        rand = llListRandomize(rand, 1);
+        rand = llListRandomize(rand, 1);
+       // MY_COLLISION_SOUND="SND_"+(string)(25-random_integer(1,25));
+      //  llSay(0,"my col sound is "+MY_COLLISION_SOUND);
+      
+        // llCollisionSound(MY_COLLISION_SOUND, 1.0);
+          
+          
     }
    
     touch_start(integer num_detected) {
@@ -312,15 +331,16 @@ default {
         for (j=0;j<num_detected;j++){
             llTriggerSound("touched",1);
             key toucher =  llDetectedKey(j);
+            //particleBeam(toucher);
             if (status =="LOCKED") return;
             llMessageLinked(LINK_SET, SLOODLE_OBJECT_BLINK, "", NULL_KEY);
             integer result = llListFindList(touchers,[toucher]);
             llSetRot(ZERO_ROTATION);
             if (result==-1){
-                touchers+=toucher;
+                touchers+=toucher;                
             }
             debug(llDumpList2String(touchers, ","));
-            llInstantMessage(toucher, "Hi "+llKey2Name(toucher)+", please select a place on the board where you would like to place this piece");
+            //llInstantMessage(toucher, "Hi "+llKey2Name(toucher)+", please select a place on the board where you would like to place this piece");
         }
         
     }
@@ -357,7 +377,8 @@ default {
          string command=llList2Key(data,0);
        if (channel==CLEANUP_CHANNEL){
           if (command=="DIE" || command=="cleanup"){
-                llTriggerSound(SND_WALL_CRUMBLING, 1);
+              // llTriggerSound(SND_WALL_CRUMBLING, 1);
+                
                 fire();
                 state die;
             }
@@ -370,7 +391,7 @@ default {
                 llMessageLinked(LINK_SET, -998, winner, NULL_KEY);
             }else
             if (command=="DIE"||command=="cleanup"){
-                llTriggerSound(SND_WALL_CRUMBLING, 1);
+                 llTriggerSound(MY_SOUND, 1);
                 fire();
                 state die;
             }else
@@ -457,6 +478,7 @@ default {
             if (offsetVec.y==-0.600){
                 offsetVec.y=-0.400;
             }
+            llTriggerSound(MY_TEXTURE_SOUND, 1);
             llOffsetTexture(offsetVec.x,offsetVec.y, ALL_SIDES);
             
         }
@@ -470,11 +492,12 @@ state die{
     }
     state_entry() {
         debug("in die state");
+       
         
-        
-        llSetTimerEvent(2);
+        llSetTimerEvent(random_integer(1,10));
     }
     timer(){
+    	llTriggerSound(MY_SOUND, 1);
         llDie();
     }
 
